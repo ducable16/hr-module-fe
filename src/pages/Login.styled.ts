@@ -2,6 +2,9 @@ import styled from 'styled-components';
 import { Card } from 'antd';
 
 export const LoginWrapper = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 100vw;
   height: 100vh;
   background: #fff;

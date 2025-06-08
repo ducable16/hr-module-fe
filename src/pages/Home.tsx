@@ -1,32 +1,22 @@
-import React from 'react';
-import styled from 'styled-components';
+import React, { PropsWithChildren } from 'react';
+import { Layout } from 'antd';
+import AppHeader from '../components/Header';
+import Sidebar from '../components/Sidebar';
 
-const HomeContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  background: #fff;
-`;
+const { Content } = Layout;
 
-const Title = styled.h1`
-  color: #1890ff;
-  font-size: 2.5rem;
-  margin-bottom: 16px;
-`;
-
-const Description = styled.p`
-  font-size: 1.2rem;
-  color: #333;
-`;
-
-const Home: React.FC = () => {
+const Home: React.FC<PropsWithChildren> = ({ children }) => {
   return (
-    <HomeContainer>
-      <Title>Welcome Home!</Title>
-      <Description>You have successfully logged in.</Description>
-    </HomeContainer>
+    <Layout style={{ minHeight: '100vh' }}>
+      <Sidebar />
+      <Layout>
+        <AppHeader />
+        <Content style={{ margin: 0, padding: 24, background: '#fff', minHeight: 'calc(100vh - 64px)' }}>
+          {/* Hiển thị component theo menu đã chọn, ví dụ: <ProjectList /> */}
+          {children ? children : <div>Welcome to Mini HR System!</div>}
+        </Content>
+      </Layout>
+    </Layout>
   );
 };
 

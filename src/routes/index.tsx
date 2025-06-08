@@ -2,6 +2,10 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from '../pages/Login';
 import Home from '../pages/Home';
+import ProjectList from '../pages/Projects/ProjectList';
+import EmployeeList from '../pages/Employees/EmployeeList';
+import AssignmentList from '../pages/Assignments/AssignmentList';
+import EmployeeHistory from '../pages/History/EmployeeHistory';
 
 interface RouteConfig {
   path: string;
@@ -21,6 +25,22 @@ const protectedRoutes: RouteConfig[] = [
   {
     path: '/home',
     element: <Home />,
+  },
+  {
+    path: '/projects',
+    element: <Home><ProjectList /></Home>,
+  },
+  {
+    path: '/employees',
+    element: <Home><EmployeeList /></Home>,
+  },
+  {
+    path: '/assignments',
+    element: <Home><AssignmentList /></Home>,
+  },
+  {
+    path: '/history',
+    element: <Home><EmployeeHistory /></Home>,
   },
 ];
 
