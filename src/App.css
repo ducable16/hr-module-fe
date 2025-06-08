@@ -1,8 +1,16 @@
-body, #root {
-  border-radius: 0;
+html, body, #root {
+  height: 100%;
+  width: 100%;
   margin: 0;
   padding: 0;
-  background: #fff;
+  background: #fff !important;
+  box-sizing: border-box;
+}
+body {
+  background: #fff !important;
+}
+#root {
+  background: #fff !important;
 }
 
 #root {

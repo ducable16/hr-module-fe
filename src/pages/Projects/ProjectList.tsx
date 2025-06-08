@@ -3,7 +3,7 @@ import { Table, Button, Modal, Form, Input, DatePicker, Popconfirm, Space, messa
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { API_BASE_URL } from '../../config/api';
-import { useUser } from '../../components/Header';
+import { useUser } from '../../context/UserContext';
 
 interface ProjectDto {
   projectCode: string;
@@ -34,8 +34,8 @@ const ProjectList: React.FC = () => {
       try {
         const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
         if (res.ok) {
-          const projects = await res.json();
-          setData(projects);
+          const result = await res.json();
+          setData(Array.isArray(result.data) ? result.data : []);
         } else {
           message.error('Failed to fetch projects');
         }
@@ -64,8 +64,9 @@ const ProjectList: React.FC = () => {
         form.resetFields();
         // Refetch
         const url = `${API_BASE_URL}/project/admin`;
-        const projects = await (await fetch(url, { headers: { Authorization: `Bearer ${token}` } })).json();
-        setData(projects);
+        const refetchRes = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+        const refetchResult = await refetchRes.json();
+        setData(Array.isArray(refetchResult.data) ? refetchResult.data : []);
       } else {
         message.error('Create failed');
       }
@@ -93,8 +94,9 @@ const ProjectList: React.FC = () => {
         form.resetFields();
         // Refetch
         const url = `${API_BASE_URL}/project/admin`;
-        const projects = await (await fetch(url, { headers: { Authorization: `Bearer ${token}` } })).json();
-        setData(projects);
+        const refetchRes = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+        const refetchResult = await refetchRes.json();
+        setData(Array.isArray(refetchResult.data) ? refetchResult.data : []);
       } else {
         message.error('Update failed');
       }
@@ -129,12 +131,17 @@ const ProjectList: React.FC = () => {
 
   const showEditModal = (record: ProjectDto) => {
     setEditingProject(record);
-    form.setFieldsValue({
-      ...record,
-      startDate: dayjs(record.startDate),
-      endDate: dayjs(record.endDate),
-    });
     setIsModalOpen(true);
+    setTimeout(() => {
+      form.setFieldsValue({
+        projectCode: record.projectCode ?? '',
+        projectName: record.projectName ?? '',
+        pmEmail: record.pmEmail ?? '',
+        startDate: record.startDate ? dayjs(record.startDate) : null,
+        endDate: record.endDate ? dayjs(record.endDate) : null,
+        description: record.description ?? '',
+      });
+    }, 0);
   };
 
   const handleOk = async () => {
@@ -176,13 +183,13 @@ const ProjectList: React.FC = () => {
           Add Project
         </Button>
       )}
-      <Table rowKey="projectCode" columns={columns as any} dataSource={data} />
+      <Table rowKey="projectCode" columns={columns as any} dataSource={data} scroll={{ y: 500 }} />
       <Modal
         title={editingProject ? 'Edit Project' : 'Add Project'}
         open={isModalOpen}
         onOk={handleOk}
         onCancel={() => setIsModalOpen(false)}
-        destroyOnClose
+        destroyOnClose={false}
       >
         <Form form={form} layout="vertical" preserve={false}>
           {editingProject && (
