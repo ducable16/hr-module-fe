@@ -1,0 +1,10 @@
+.home-layout {
+  min-height: 100vh;
+}
+
+.home-content {
+  margin: 0;
+  padding: 24px;
+  background: #fff;
+  min-height: calc(100vh - 64px);
+} 

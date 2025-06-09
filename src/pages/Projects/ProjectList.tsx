@@ -4,6 +4,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { API_BASE_URL } from '../../config/api';
 import { useUser } from '../../context/UserContext';
+import './ProjectList.css';
 
 interface ProjectDto {
   projectCode: string;

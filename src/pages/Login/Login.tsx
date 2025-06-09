@@ -1,15 +1,8 @@
 import React, { useState } from 'react';
 import { Form, Input, Button, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
-import { API_BASE_URL } from '../config/api';
-import {
-  LoginWrapper,
-  LoginContainer,
-  LoginCard,
-  LoginTitle,
-  StyledInput,
-  StyledButton
-} from './Login.styled';
+import { API_BASE_URL } from '../../config/api';
+import './Login.css';
 
 interface LoginFormData {
   email: string;
@@ -54,21 +47,19 @@ const Login: React.FC = () => {
   };
 
   return (
-    <LoginWrapper>
-      <LoginContainer>
-        <LoginCard>
-          <LoginTitle>Sign in</LoginTitle>
+    <div className="login-wrapper">
+      <div className="login-container">
+        <div className="login-card">
+          <h1 className="login-title">Sign in</h1>
           <Form
             name="login"
             onFinish={onFinish}
             layout="vertical"
           >
             {errorMessage && (
-              <div style={{ color: 'red', marginBottom: 16, textAlign: 'center', fontWeight: 600, fontSize: '1.15rem' }}>
-                Incorrect email or password!
-              </div>
+              <div className="login-error">Incorrect email or password!</div>
             )}
-            <StyledInput>
+            <div className="styled-input">
               <Form.Item
                 name="email"
                 rules={[
@@ -83,9 +74,8 @@ const Login: React.FC = () => {
                   autoComplete="username"
                 />
               </Form.Item>
-            </StyledInput>
-
-            <StyledInput>
+            </div>
+            <div className="styled-input">
               <Form.Item
                 name="password"
                 rules={[
@@ -100,9 +90,8 @@ const Login: React.FC = () => {
                   autoComplete="current-password"
                 />
               </Form.Item>
-            </StyledInput>
-
-            <StyledButton>
+            </div>
+            <div className="styled-button">
               <Form.Item>
                 <Button
                   type="primary"
@@ -114,11 +103,11 @@ const Login: React.FC = () => {
                   Sign in
                 </Button>
               </Form.Item>
-            </StyledButton>
+            </div>
           </Form>
-        </LoginCard>
-      </LoginContainer>
-    </LoginWrapper>
+        </div>
+      </div>
+    </div>
   );
 };
 

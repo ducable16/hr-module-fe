@@ -23,12 +23,12 @@ a:hover {
 }
 
 html, body, #root {
-  height: 100%;
-  width: 100%;
+  width: 100vw;
+  min-width: 100vw;
+  height: 100vh;
+  min-height: 100vh;
   margin: 0;
   padding: 0;
-  border-radius: 0;
-  background: #fff;
   box-sizing: border-box;
 }
 body::-webkit-scrollbar, html::-webkit-scrollbar {

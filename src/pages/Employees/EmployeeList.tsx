@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Table, Button, Modal, Form, Input, Select, Popconfirm, Space } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import './EmployeeList.css';
 
 interface Employee {
   id: number;

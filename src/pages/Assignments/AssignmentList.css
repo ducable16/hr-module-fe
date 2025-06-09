@@ -1,0 +1,143 @@
+.assignment-outer {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  align-items: stretch;
+  margin-top: 0;
+}
+
+.assignment-card {
+  background: #fff;
+  border-radius: 0;
+  box-shadow: none;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 0 0 0 0;
+}
+
+.assignment-header {
+  padding: 32px 40px 0 40px;
+  border-bottom: 1px solid #eee;
+}
+.assignment-header-row {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+.assignment-title {
+  margin: 0;
+  flex: 1;
+}
+.assignment-tabs {
+  display: flex;
+  gap: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e0e0e0;
+  height: 40px;
+}
+.assignment-tab {
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  color: #0a66c2;
+  background: #f5f7fa;
+  border-right: 1px solid #e0e0e0;
+}
+.assignment-tab.inactive {
+  color: #888;
+  background: #fff;
+  font-weight: 400;
+}
+.assignment-body {
+  padding: 32px 40px 0 40px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.assignment-form-section {
+  border-bottom: 1px solid #eee;
+  padding-bottom: 32px;
+  margin-bottom: 32px;
+}
+.assignment-form {
+  width: 100% !important;
+  max-width: none !important;
+  box-sizing: border-box;
+}
+.assignment-form .ant-form-item {
+  margin-bottom: 24px;
+}
+.assignment-form .ant-form-item:last-child {
+  text-align: right;
+  margin-bottom: 0;
+}
+.assignment-table-section {
+  /* nothing for now, for future custom style */
+}
+
+.assignment-form .ant-input,
+.assignment-form .ant-input-affix-wrapper,
+.assignment-form .ant-picker,
+.assignment-form .ant-select,
+.assignment-form .ant-select-selector,
+.assignment-form .ant-input-number,
+.assignment-form .ant-auto-complete,
+.assignment-form .ant-select-single {
+  width: 100% !important;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+@media (max-width: 900px) {
+  .assignment-card {
+    padding: 0 8px;
+    border-radius: 8px;
+  }
+  .assignment-header, .assignment-body {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  .assignment-form-section {
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+  }
+  .assignment-form .ant-form-item {
+    margin-bottom: 16px;
+  }
+  .assignment-form .ant-btn {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .assignment-card {
+    padding: 0 2px;
+    border-radius: 4px;
+  }
+  .assignment-header, .assignment-body {
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+  .assignment-title {
+    font-size: 1.2rem;
+  }
+  .assignment-form .ant-input,
+  .assignment-form .ant-input-affix-wrapper,
+  .assignment-form .ant-picker,
+  .assignment-form .ant-select,
+  .assignment-form .ant-select-selector,
+  .assignment-form .ant-input-number,
+  .assignment-form .ant-auto-complete,
+  .assignment-form .ant-select-single {
+    font-size: 1rem;
+    padding: 6px 8px;
+  }
+} 

@@ -1,4 +1,5 @@
 import React from 'react';
+import './EmployeeHistory.css';
 
 const EmployeeHistory: React.FC = () => {
   return (

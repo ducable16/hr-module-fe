@@ -1,17 +1,19 @@
-import React, { PropsWithChildren } from 'react';
+import React from 'react';
+import type { PropsWithChildren } from 'react';
 import { Layout } from 'antd';
-import AppHeader from '../components/Header';
-import Sidebar from '../components/Sidebar';
+import AppHeader from '../../components/Header';
+import Sidebar from '../../components/Sidebar';
+import './Home.css';
 
 const { Content } = Layout;
 
 const Home: React.FC<PropsWithChildren> = ({ children }) => {
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout className="home-layout">
       <Sidebar />
       <Layout>
         <AppHeader />
-        <Content style={{ margin: 0, padding: 24, background: '#fff', minHeight: 'calc(100vh - 64px)' }}>
+        <Content className="home-content">
           {/* Hiển thị component theo menu đã chọn, ví dụ: <ProjectList /> */}
           {children ? children : <div>Welcome to Mini HR System!</div>}
         </Content>
