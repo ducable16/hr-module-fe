@@ -53,3 +53,7 @@ body {
 .read-the-docs {
   color: #888;
 }
+
+.ant-message {
+  z-index: 3000 !important;
+}

@@ -5,6 +5,10 @@ import React, { useEffect, useState } from 'react';
 import { API_BASE_URL } from './config/api';
 import { UserContext } from './context/UserContext';
 import type { UserInfo } from './context/UserContext';
+import { authFetch } from './utils/authFetch';
+import { message as antdMessage, Button } from 'antd';
+
+antdMessage.success('Test message from App');
 
 function App() {
   const [user, setUser] = useState<UserInfo | null>(null);
@@ -16,7 +20,7 @@ function App() {
       if (!token) return;
       setLoading(true);
       try {
-        const res = await fetch(`${API_BASE_URL}/employee/info`, {
+        const res = await authFetch(`${API_BASE_URL}/employee/info`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
@@ -39,6 +43,7 @@ function App() {
     <UserContext.Provider value={user}>
       <BrowserRouter>
         <AppRoutes />
+        <Button type="primary" onClick={() => antdMessage.success('Button test message')}>Test Message</Button>
       </BrowserRouter>
     </UserContext.Provider>
   );

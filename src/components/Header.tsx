@@ -1,6 +1,7 @@
 import React from 'react';
 import { Layout, Avatar, Spin } from 'antd';
 import { useUser } from '../context/UserContext';
+import { authFetch } from '../utils/authFetch';
 
 const { Header } = Layout;
 
@@ -11,7 +12,7 @@ const AppHeader: React.FC = () => {
     const token = localStorage.getItem('accessToken');
     if (token) {
       try {
-        await fetch('/auth/logout', {
+        await authFetch('/auth/logout', {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}` },
         });

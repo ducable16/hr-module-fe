@@ -6,6 +6,7 @@ import {
 } from '@ant-design/icons';
 import styled from 'styled-components';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useUser } from '../context/UserContext';
 
 const { Sider } = Layout;
 
@@ -59,13 +60,14 @@ const StyledMenu = styled(Menu)`
 const Sidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const user = useUser();
   const selectedKey = location.pathname === '/' ? 'dashboard' : location.pathname.replace('/', '');
 
   return (
     <Sider width={250} style={{ background: '#fff', boxShadow: '2px 0 8px #f0f1f2', position: 'relative', minHeight: '100vh' }}>
       <Logo>
         <SmileOutlined style={{ color: '#0a66c2', fontSize: 28, marginRight: 10 }} />
-        Modernize
+        HR
       </Logo>
       <StyledMenu
         mode="inline"
@@ -73,6 +75,7 @@ const Sidebar: React.FC = () => {
         style={{ height: '100%', borderRight: 0, border: 'none' }}
         onClick={({ key }) => {
           if (key === 'dashboard') navigate('/home');
+          else if (key === 'projects' && user?.role === 'PM') navigate('/pm-projects');
           else navigate(`/${key}`);
         }}
       >

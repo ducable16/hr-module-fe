@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Form, Input, Button, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { API_BASE_URL } from '../../config/api';
+import { authFetch } from '../../utils/authFetch';
 import './Login.css';
 
 interface LoginFormData {
@@ -17,7 +18,7 @@ const Login: React.FC = () => {
     try {
       setLoading(true);
       setErrorMessage(null);
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response = await authFetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

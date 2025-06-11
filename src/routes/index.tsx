@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from '../pages/Login/Login';
 import Home from '../pages/Home/Home';
 import ProjectList from '../pages/Projects/ProjectList';
+import PMProjectList from '../pages/Projects/PMProjectList';
 import EmployeeList from '../pages/Employees/EmployeeList';
 import AssignmentList from '../pages/Assignments/AssignmentList';
 import EmployeeHistory from '../pages/History/EmployeeHistory';
@@ -12,7 +13,6 @@ interface RouteConfig {
   element: React.ReactNode;
 }
 
-// Public routes - accessible without authentication
 const publicRoutes: RouteConfig[] = [
   {
     path: '/login',
@@ -20,7 +20,6 @@ const publicRoutes: RouteConfig[] = [
   },
 ];
 
-// Protected routes - require authentication
 const protectedRoutes: RouteConfig[] = [
   {
     path: '/home',
@@ -29,6 +28,10 @@ const protectedRoutes: RouteConfig[] = [
   {
     path: '/projects',
     element: <Home><ProjectList /></Home>,
+  },
+  {
+    path: '/pm-projects',
+    element: <Home><PMProjectList /></Home>,
   },
   {
     path: '/employees',
