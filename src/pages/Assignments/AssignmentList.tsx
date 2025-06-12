@@ -5,6 +5,8 @@ import { authFetch } from '../../utils/authFetch';
 import { useUser } from '../../context/UserContext';
 import dayjs from 'dayjs';
 import './AssignmentList.css';
+import { toast } from 'react-toastify';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 const { Option } = Select;
 const { Title } = Typography;
@@ -21,6 +23,7 @@ interface EmployeeSearchDto {
   employeeId: number;
   fullName: string;
   email: string;
+  role: string;
 }
 
 interface ProjectMemberDto {
@@ -41,6 +44,15 @@ const AssignmentList: React.FC = () => {
   const searchTimeout = useRef<number | null>(null);
   const [form] = Form.useForm();
   const watchedProjectId = Form.useWatch('projectId', form);
+  const [workloadBlocks, setWorkloadBlocks] = useState<any[]>([]);
+  const [range, setRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>([
+    dayjs().subtract(3, 'month'),
+    dayjs().add(3, 'month')
+  ]);
+  const [workloadRemain, setWorkloadRemain] = useState<number | null>(null);
+  const watchedEmployeeId = Form.useWatch('employeeId', form);
+  const watchedStartDate = Form.useWatch('startDate', form);
+  const watchedEndDate = Form.useWatch('endDate', form);
 
   const isPM = user?.role === 'PM';
 
@@ -49,7 +61,7 @@ const AssignmentList: React.FC = () => {
     if (!isPM) return;
     const fetchProjects = async () => {
       const token = localStorage.getItem('accessToken');
-      const res = await authFetch(`${API_BASE_URL}/project/project-manager`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await authFetch(`${API_BASE_URL}/project/project-manager/current`, { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         const result = await res.json();
         // Lọc bỏ các project không có projectId hợp lệ
@@ -93,6 +105,29 @@ const AssignmentList: React.FC = () => {
         setEmployeeOptions(Array.isArray(result.data) ? result.data : []);
       }
     }, 100);
+  };
+
+  const handleSelectEmployee = async (value: string, option: any) => {
+    setEmployeeInput(value);
+    form.setFieldsValue({ employeeId: option.employeeId });
+    // Fetch workload blocks
+    const employeeId = option.employeeId;
+    const projectId = form.getFieldValue('projectId');
+    if (!employeeId || !projectId) return;
+    fetchWorkloadBlocks(employeeId, projectId);
+  };
+
+  const fetchWorkloadBlocks = async (employeeId: number, projectId: number) => {
+    const rangeStart = range[0].format('YYYY-MM-DD');
+    const rangeEnd = range[1].format('YYYY-MM-DD');
+    const token = localStorage.getItem('accessToken');
+    const res = await authFetch(`${API_BASE_URL}/employee/${employeeId}/workload-blocks?projectId=${projectId}&rangeStart=${rangeStart}&rangeEnd=${rangeEnd}`, { headers: { Authorization: `Bearer ${token}` } });
+    if (res.ok) {
+      const result = await res.json();
+      setWorkloadBlocks(Array.isArray(result.data) ? result.data : []);
+    } else {
+      setWorkloadBlocks([]);
+    }
   };
 
   const handleAssign = async (values: any) => {
@@ -165,7 +200,7 @@ const AssignmentList: React.FC = () => {
         body: JSON.stringify(body),
       });
       if (res.ok) {
-        window.alert('Assigned successfully');
+        toast.success('Assigned successfully');
         form.resetFields();
         setEmployeeInput('');
         // Refetch members
@@ -181,12 +216,43 @@ const AssignmentList: React.FC = () => {
           }
         } catch {}
         console.log('Show error:', errorMsg);
-        window.alert(errorMsg);
+        toast.error(errorMsg);
       }
     } catch {
-      window.alert('Assign failed');
+      toast.error('Assign failed');
     }
   };
+
+  useEffect(() => {
+    const checkWorkload = async () => {
+      if (watchedEmployeeId && watchedStartDate) {
+        const token = localStorage.getItem('accessToken');
+        const body: any = {
+          employeeId: watchedEmployeeId,
+          startDate: watchedStartDate.format('DD-MM-YYYY'),
+        };
+        if (watchedEndDate) {
+          body.endDate = watchedEndDate.format('DD-MM-YYYY');
+        } else {
+          body.endDate = null;
+        }
+        const res = await authFetch(`${API_BASE_URL}/project/workload-check`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify(body),
+        });
+        if (res.ok) {
+          const result = await res.json();
+          setWorkloadRemain(result.data?.workloadPercent ?? null);
+        } else {
+          setWorkloadRemain(null);
+        }
+      } else {
+        setWorkloadRemain(null);
+      }
+    };
+    checkWorkload();
+  }, [watchedEmployeeId, watchedStartDate, watchedEndDate]);
 
   const columns = [
     { title: 'Employee Code', dataIndex: 'employeeCode', key: 'employeeCode' },
@@ -224,7 +290,8 @@ const AssignmentList: React.FC = () => {
                   style={{ width: '100%' }}
                 >
                   {projects && projects.length > 0 ? projects.map(p => {
-                    const label = `${p.projectCode} - ${p.projectName} (${p.startDate} ~ ${p.endDate})`;
+                    const endDateLabel = p.endDate ? p.endDate : 'Ongoing';
+                    const label = `${p.projectCode} - ${p.projectName} (${p.startDate} ~ ${endDateLabel})`;
                     return (
                       <Option key={p.projectId} value={p.projectId}>
                         {label}
@@ -237,13 +304,10 @@ const AssignmentList: React.FC = () => {
                 <AutoComplete
                   placeholder="Search by email"
                   onSearch={handleSearchEmployee}
-                  options={employeeOptions.map(e => ({ value: `${e.fullName} (${e.email})`, employeeId: e.employeeId }))}
+                  options={employeeOptions.map(e => ({ value: `${e.fullName} (${e.email}) - ${e.role}`, employeeId: e.employeeId }))}
                   filterOption={false}
                   value={employeeInput}
-                  onSelect={(value, option) => {
-                    setEmployeeInput(value);
-                    form.setFieldsValue({ employeeId: option.employeeId });
-                  }}
+                  onSelect={handleSelectEmployee}
                   onChange={val => {
                     setEmployeeInput(val);
                     form.setFieldsValue({ employeeId: null });
@@ -254,14 +318,34 @@ const AssignmentList: React.FC = () => {
               <Form.Item name="employeeId" style={{ display: 'none' }} rules={[{ required: true, message: 'Select employee!' }]}> 
                 <Input />
               </Form.Item>
-              <Form.Item name="workloadPercent" label="Workload %" rules={[{ required: true, message: 'Enter workload!' }]}> 
-                <InputNumber min={1} max={100} style={{ width: '100%' }} />
-              </Form.Item>
               <Form.Item name="startDate" label="Start Date" rules={[{ required: true, message: 'Select start date!' }]}> 
                 <DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" />
               </Form.Item>
-              <Form.Item name="endDate" label="End Date">
+              <Form.Item name="endDate" label="End Date"
+                rules={[
+                  {
+                    validator: (_, value) => {
+                      const startDate = form.getFieldValue('startDate');
+                      if (!value || !startDate) return Promise.resolve();
+                      if (value.isBefore(startDate, 'day')) {
+                        return Promise.reject(new Error('End date cannot be before start date!'));
+                      }
+                      return Promise.resolve();
+                    },
+                  },
+                ]}
+              >
                 <DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" allowClear />
+              </Form.Item>
+              <Form.Item style={{ marginBottom: 0 }}>
+                {workloadRemain !== null && (
+                  <div style={{ marginBottom: 8, color: '#0a66c2', fontWeight: 500 }}>
+                    Workload remaining for this employee in selected period: <b>{workloadRemain}%</b>
+                  </div>
+                )}
+              </Form.Item>
+              <Form.Item name="workloadPercent" label="Workload %" rules={[{ required: true, message: 'Enter workload!' }]}> 
+                <InputNumber min={1} max={100} style={{ width: '100%' }} />
               </Form.Item>
               <Form.Item style={{ textAlign: 'center' }}>
                 <Button type="primary" htmlType="submit" loading={loading} style={{ minWidth: 160, width: 200 }}>Assign</Button>
@@ -279,6 +363,37 @@ const AssignmentList: React.FC = () => {
                 pagination={false}
                 title={() => 'Current Members'}
               />
+            </div>
+          )}
+          {/* Chỉ hiển thị chart sau khi đã select employee */}
+          {form.getFieldValue('employeeId') && (
+            <div style={{ margin: '32px 0' }}>
+              <DatePicker.RangePicker
+                value={range}
+                format="DD-MM-YYYY"
+                onChange={val => {
+                  if (val) setRange(val as [dayjs.Dayjs, dayjs.Dayjs]);
+                }}
+                style={{ marginBottom: 16, marginRight: 8 }}
+              />
+              <Button onClick={() => fetchWorkloadBlocks(form.getFieldValue('employeeId'), form.getFieldValue('projectId'))}>
+                View Chart
+              </Button>
+              <h4>Employee Workload</h4>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={(workloadBlocks.length > 0 ? workloadBlocks : [{ label: 'No Data', workloadPercent: 0 }]).map(b => ({
+                  ...b,
+                  label: b.label || (b.startDate && b.endDate
+                    ? `${dayjs(b.startDate, 'DD-MM-YYYY').format('DD-MM-YYYY')} ~ ${dayjs(b.endDate, 'DD-MM-YYYY').format('DD-MM-YYYY')}`
+                    : b.label)
+                }))} margin={{ bottom: 40 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="label" angle={-30} textAnchor="end" interval={0} height={120} />
+                  <YAxis domain={[0, 100]} />
+                  <Tooltip />
+                  <Bar dataKey="workloadPercent" fill="#1890ff" />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           )}
         </div>

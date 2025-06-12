@@ -83,7 +83,7 @@ const Sidebar: React.FC = () => {
         <Menu.Item key="projects" icon={<ProjectOutlined />}>Projects</Menu.Item>
         <Menu.Item key="employees" icon={<TeamOutlined />}>Employees</Menu.Item>
         <Menu.Item key="assignments" icon={<UserOutlined />}>Assignments</Menu.Item>
-        <Menu.Item key="history" icon={<HistoryOutlined />}>History</Menu.Item>
+        {/* <Menu.Item key="request" icon={<HistoryOutlined />}>Request</Menu.Item> */}
       </StyledMenu>
     </Sider>
   );

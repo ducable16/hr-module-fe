@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Modal, Form, Input, DatePicker, Popconfirm, Space, message as antdMessage } from 'antd';
+import { Table, Button, Modal, Form, Input, DatePicker, Popconfirm, Space, AutoComplete } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { API_BASE_URL } from '../../config/api';
 import { authFetch } from '../../utils/authFetch';
 import { useUser } from '../../context/UserContext';
 import './ProjectList.css';
+import { toast } from 'react-toastify';
 
 interface ProjectDto {
   projectCode: string;
@@ -17,8 +18,6 @@ interface ProjectDto {
   createdAt?: string;
   updatedAt?: string;
 }
-
-antdMessage.config({ top: 200, duration: 4, zIndex: 3000 });
 
 const ProjectList: React.FC = () => {
   const user = useUser();
@@ -34,6 +33,8 @@ const ProjectList: React.FC = () => {
   const [isEditPeriodModalOpen, setIsEditPeriodModalOpen] = useState(false);
   const [editingPeriod, setEditingPeriod] = useState<any>(null);
   const [periodForm] = Form.useForm();
+  const [pmOptions, setPmOptions] = useState<any[]>([]);
+  const [pmInput, setPmInput] = useState('');
 
   const fetchProjects = async (page = 1, size = 10) => {
     if (!user) return;
@@ -56,9 +57,9 @@ const ProjectList: React.FC = () => {
           setData(Array.isArray(result.data) ? result.data : []);
         }
       } else {
-        antdMessage.error('Failed to fetch projects');
+        toast.error('Failed to fetch projects');
       }
-    } catch { antdMessage.error('Failed to fetch projects'); }
+    } catch { toast.error('Failed to fetch projects'); }
   };
 
   useEffect(() => {
@@ -82,7 +83,7 @@ const ProjectList: React.FC = () => {
       });
       if (res.ok) {
         console.log('Project created!');
-        antdMessage.success('Đã tạo project');
+        toast.success('Project created successfully');
         setIsModalOpen(false);
         form.resetFields();
         // Refetch
@@ -92,10 +93,10 @@ const ProjectList: React.FC = () => {
         setData(Array.isArray(refetchResult.data?.content) ? refetchResult.data.content : []);
         setPagination(prev => ({ ...prev, total: refetchResult.data?.totalElements || 0 }));
       } else {
-        antdMessage.error('Create failed');
+        toast.error('Create failed');
       }
     } catch {
-      antdMessage.error('Create failed');
+      toast.error('Create failed');
     }
   };
 
@@ -104,7 +105,7 @@ const ProjectList: React.FC = () => {
     // Lấy projectId từ editingProject
     const projectId = (editingProject as any)?.projectId;
     if (!projectId) {
-      antdMessage.error('Cannot find projectId for this project!');
+      toast.error('Cannot find projectId for this project!');
       return;
     }
     try {
@@ -121,7 +122,7 @@ const ProjectList: React.FC = () => {
         }),
       });
       if (res.ok) {
-        antdMessage.success('Project updated successfully');
+        toast.success('Project updated successfully');
         setIsModalOpen(false);
         form.resetFields();
         // Refetch
@@ -131,10 +132,10 @@ const ProjectList: React.FC = () => {
         setData(Array.isArray(refetchResult.data?.content) ? refetchResult.data.content : []);
         setPagination(prev => ({ ...prev, total: refetchResult.data?.totalElements || 0 }));
       } else {
-        antdMessage.error('Update failed');
+        toast.error('Update failed');
       }
     } catch {
-      antdMessage.error('Update failed');
+      toast.error('Update failed');
     }
   };
 
@@ -143,7 +144,7 @@ const ProjectList: React.FC = () => {
     // Tìm project theo projectCode để lấy projectId
     const project = data.find(proj => proj.projectCode === projectCode);
     if (!project || !(project as any).projectId) {
-      antdMessage.error('Cannot find projectId for this project!');
+      toast.error('Cannot find projectId for this project!');
       return;
     }
     const projectId = (project as any).projectId;
@@ -154,12 +155,12 @@ const ProjectList: React.FC = () => {
       });
       if (res.ok) {
         setData(data.filter(proj => (proj as any).projectId !== projectId));
-        antdMessage.success('Deleted successfully');
+        toast.success('Deleted successfully');
       } else {
-        antdMessage.error('Delete failed');
+        toast.error('Delete failed');
       }
     } catch {
-      antdMessage.error('Delete failed');
+      toast.error('Delete failed');
     }
   };
 
@@ -190,7 +191,7 @@ const ProjectList: React.FC = () => {
       if (editingProject) await handleEdit(values);
       else await handleAdd(values);
     } catch {
-      antdMessage.error('Save failed');
+      toast.error('Save failed');
     }
   };
 
@@ -250,14 +251,14 @@ const ProjectList: React.FC = () => {
         setIsEditPeriodModalOpen(false);
         setEditingPeriod(null);
         periodForm.resetFields();
-        antdMessage.success('Cập nhật thành công');
+        toast.success('Cập nhật thành công');
         // Refetch lại participation periods
         if (selectedProject) handleViewPeriods(selectedProject);
       } else {
-        antdMessage.error('Cập nhật thất bại');
+        toast.error('Cập nhật thất bại');
       }
     } catch {
-      antdMessage.error('Lưu thất bại');
+      toast.error('Lưu thất bại');
     }
   };
 
@@ -291,14 +292,14 @@ const ProjectList: React.FC = () => {
         </Button>
       ),
     } : null),
-  ].filter(Boolean);
+  ].filter(col => col !== null);
 
   // Bảng participation periods
   const periodColumns = [
     { title: 'Start Date', dataIndex: 'startDate', key: 'startDate', width: 120 },
     { title: 'End Date', dataIndex: 'endDate', key: 'endDate', width: 120 },
     { title: 'Workload (%)', dataIndex: 'workloadPercent', key: 'workloadPercent', width: 120 },
-    ...(user && user.role !== 'ADMIN' && user.role !== 'PM' ? [{
+    ...(user && user.role === 'PM' ? [{
       title: 'Action',
       key: 'action',
       width: 100,
@@ -308,97 +309,113 @@ const ProjectList: React.FC = () => {
         </Button>
       ),
     }] : []),
-  ];
+  ].filter(col => col !== null);
+
+  const handleSearchPM = (value: string) => {
+    setPmInput(value);
+    if (!value) {
+      setPmOptions([]);
+      return;
+    }
+    setTimeout(async () => {
+      const token = localStorage.getItem('accessToken');
+      const res = await authFetch(`${API_BASE_URL}/employee/search?role=PM&email=${encodeURIComponent(value)}`, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) {
+        const result = await res.json();
+        setPmOptions(Array.isArray(result.data) ? result.data : []);
+      }
+    }, 200);
+  };
 
   return (
     <div>
-      <h2 style={{ textAlign: 'center', fontWeight: 700, margin: '0 0 24px 0' }}>Project List</h2>
+      <h2>Project List</h2>
       {isAdmin && (
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16, gap: 16 }}>
           <Button type="primary" icon={<PlusOutlined />} onClick={showAddModal}>
             Add Project
           </Button>
         </div>
       )}
-      <Table
-        rowKey="projectCode"
-        columns={columns as any}
-        dataSource={data}
-        scroll={{ y: 500, x: 1200 }}
-        pagination={isAdmin ? {
-          current: pagination.current,
-          pageSize: pagination.pageSize,
-          total: pagination.total,
-          onChange: (page, pageSize) => {
-            setPagination(prev => ({ ...prev, current: page, pageSize }));
-            // Gọi lại fetchProjects với page mới
-            fetchProjects(page, pageSize);
-          },
-        } : false}
-      />
-      {user && user.role !== 'ADMIN' && user.role !== 'PM' && selectedProject && (
+      <Table columns={columns} dataSource={data} pagination={pagination} />
+
+      {/* Hiển thị periods khi chọn project */}
+      {selectedProject && (
         <div style={{ marginTop: 32 }}>
-          <h3>My Participation Periods in Project: {selectedProject.projectName}</h3>
+          <h3>Participation Periods for: {selectedProject.projectName}</h3>
           <Table
-            rowKey={(_record, idx) => idx!.toString()}
             columns={periodColumns}
-            dataSource={[...periods].sort((a, b) => {
-              const d1 = dayjs(a.startDate, 'DD-MM-YYYY');
-              const d2 = dayjs(b.startDate, 'DD-MM-YYYY');
-              return d2.valueOf() - d1.valueOf();
-            })}
+            dataSource={periods}
             loading={periodLoading}
-            bordered
             pagination={false}
+            rowKey={record => record.assignmentId}
           />
         </div>
       )}
+
       <Modal
-        title={editingProject ? 'Edit Project' : 'Add Project'}
+        title="Add Project"
         open={isModalOpen}
         onOk={handleOk}
         onCancel={() => setIsModalOpen(false)}
-        destroyOnClose={false}
       >
-        <Form form={form} layout="vertical" preserve={false}>
-          {editingProject && (
-            <Form.Item name="projectCode" label="Project Code">
-              <Input disabled />
-            </Form.Item>
-          )}
-          <Form.Item name="projectName" label="Project Name" rules={[{ required: true, message: 'Please input project name!' }]}> 
+        <Form form={form} layout="vertical">
+          <Form.Item name="projectName" label="Project Name" rules={[{ required: true }]}>
             <Input />
           </Form.Item>
-          <Form.Item name="pmEmail" label="PM Email" rules={[{ required: true, type: 'email', message: 'Please input a valid email!' }]}> 
-            <Input />
+          <Form.Item name="pmEmail" label="PM Email" rules={[{ required: true }, { type: 'email', message: 'Please enter a valid email!' }]}>
+            <AutoComplete
+              placeholder="Search PM by email"
+              onSearch={handleSearchPM}
+              options={pmOptions.map(e => ({ value: e.email, label: `${e.fullName} (${e.email}) - ${e.role}` }))}
+              filterOption={false}
+              value={pmInput}
+              onSelect={(value, option) => {
+                setPmInput(value);
+                form.setFieldsValue({ pmEmail: value });
+              }}
+              onChange={val => {
+                setPmInput(val);
+                form.setFieldsValue({ pmEmail: val });
+              }}
+              style={{ width: '100%' }}
+            />
           </Form.Item>
-          <Form.Item name="startDate" label="Start Date" rules={[{ required: true, message: 'Please select start date!' }]}> 
-            <DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" />
+          <Form.Item name="startDate" label="Start Date" rules={[{ required: true }, ({ getFieldValue }) => ({
+            validator(_, value) {
+              const endDate = getFieldValue('endDate');
+              if (!value || !endDate) return Promise.resolve();
+              if (value.isAfter(endDate, 'day')) {
+                return Promise.reject(new Error('Start date must be before end date!'));
+              }
+              return Promise.resolve();
+            },
+          })]}>
+            <DatePicker style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item name="endDate" label="End Date">
-            <DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" allowClear />
+            <DatePicker style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item name="description" label="Description">
-            <Input.TextArea rows={3} />
+            <Input.TextArea />
           </Form.Item>
         </Form>
       </Modal>
       <Modal
-        title="Edit Participation Period"
+        title="Edit Period"
         open={isEditPeriodModalOpen}
         onOk={handleEditPeriodOk}
-        onCancel={() => { setIsEditPeriodModalOpen(false); setEditingPeriod(null); periodForm.resetFields(); }}
-        destroyOnClose={false}
+        onCancel={() => setIsEditPeriodModalOpen(false)}
       >
-        <Form form={periodForm} layout="vertical" preserve={false}>
-          <Form.Item name="startDate" label="Start Date" rules={[{ required: true, message: 'Chọn ngày bắt đầu!' }]}> 
-            <DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" />
+        <Form form={periodForm} layout="vertical">
+          <Form.Item name="startDate" label="Start Date" rules={[{ required: true }]}>
+            <DatePicker />
           </Form.Item>
-          <Form.Item name="endDate" label="End Date">
-            <DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" allowClear />
+          <Form.Item name="endDate" label="End Date" rules={[{ required: true }]}>
+            <DatePicker />
           </Form.Item>
-          <Form.Item name="workloadPercent" label="Workload (%)" rules={[{ required: true, message: 'Nhập workload!' }]}> 
-            <Input type="number" min={1} max={100} />
+          <Form.Item name="workloadPercent" label="Workload (%)">
+            <Input />
           </Form.Item>
         </Form>
       </Modal>

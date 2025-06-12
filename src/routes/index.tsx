@@ -6,7 +6,6 @@ import ProjectList from '../pages/Projects/ProjectList';
 import PMProjectList from '../pages/Projects/PMProjectList';
 import EmployeeList from '../pages/Employees/EmployeeList';
 import AssignmentList from '../pages/Assignments/AssignmentList';
-import EmployeeHistory from '../pages/History/EmployeeHistory';
 
 interface RouteConfig {
   path: string;
@@ -40,10 +39,6 @@ const protectedRoutes: RouteConfig[] = [
   {
     path: '/assignments',
     element: <Home><AssignmentList /></Home>,
-  },
-  {
-    path: '/history',
-    element: <Home><EmployeeHistory /></Home>,
   },
 ];
 

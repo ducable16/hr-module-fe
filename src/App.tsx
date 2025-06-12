@@ -7,6 +7,8 @@ import { UserContext } from './context/UserContext';
 import type { UserInfo } from './context/UserContext';
 import { authFetch } from './utils/authFetch';
 import { message as antdMessage, Button } from 'antd';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 antdMessage.success('Test message from App');
 
@@ -43,7 +45,7 @@ function App() {
     <UserContext.Provider value={user}>
       <BrowserRouter>
         <AppRoutes />
-        <Button type="primary" onClick={() => antdMessage.success('Button test message')}>Test Message</Button>
+        <ToastContainer position="top-center" autoClose={4000} />
       </BrowserRouter>
     </UserContext.Provider>
   );

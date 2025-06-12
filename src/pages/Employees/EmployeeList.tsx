@@ -7,6 +7,7 @@ import { API_BASE_URL } from '../../config/api';
 import { authFetch } from '../../utils/authFetch';
 import { useUser } from '../../context/UserContext';
 import './EmployeeList.css';
+import { toast } from 'react-toastify';
 
 interface EmployeeDto {
   employeeId: number;
@@ -73,7 +74,7 @@ const EmployeeList: React.FC = () => {
             total: result.data?.totalElements || 0,
           });
         } else {
-          message.error('Failed to fetch employees');
+          toast.error('Failed to fetch employees');
         }
       } else if (user) {
         const token = localStorage.getItem('accessToken');
@@ -85,11 +86,11 @@ const EmployeeList: React.FC = () => {
           setData(result.data ? [result.data] : []);
           setPagination({ current: 1, pageSize: 10, total: 1 });
         } else {
-          message.error('Failed to fetch employee info');
+          toast.error('Failed to fetch employee info');
         }
       }
     } catch {
-      message.error('Failed to fetch employees');
+      toast.error('Failed to fetch employees');
     }
     setLoading(false);
   };
@@ -126,13 +127,13 @@ const EmployeeList: React.FC = () => {
         method: 'DELETE',
       });
       if (res.ok) {
-        message.success('Employee deleted successfully');
+        toast.success('Employee deleted successfully');
         fetchEmployees(pagination.current, pagination.pageSize, filterRole);
       } else {
-        message.error('Delete failed');
+        toast.error('Delete failed');
       }
     } catch {
-      message.error('Delete failed');
+      toast.error('Delete failed');
     }
   };
 
@@ -154,12 +155,12 @@ const EmployeeList: React.FC = () => {
           }),
         });
         if (res.ok) {
-          message.success('Employee updated successfully');
+          toast.success('Employee updated successfully');
           setIsModalOpen(false);
           form.resetFields();
           fetchEmployees(pagination.current, pagination.pageSize, filterRole);
         } else {
-          message.error('Update failed');
+          toast.error('Update failed');
         }
       } else {
         // Create
@@ -175,53 +176,38 @@ const EmployeeList: React.FC = () => {
           }),
         });
         if (res.ok) {
-          message.success('Employee created successfully');
+          toast.success('Employee created successfully');
           setIsModalOpen(false);
           form.resetFields();
           fetchEmployees(1, pagination.pageSize, filterRole);
         } else {
-          message.error('Create failed');
+          toast.error('Create failed');
         }
       }
     } catch {
-      message.error('Save failed');
+      toast.error('Save failed');
     }
   };
 
-  const handleShowHistory = async (employeeId: number, role?: string) => {
+  const handleShowHistory = async (employeeId: number) => {
     setHistoryLoading(true);
     setHistoryEmployeeId(employeeId);
     setHistoryData([]);
     try {
       const token = localStorage.getItem('accessToken');
-      if (role === 'PM') {
-        // PM: lấy danh sách project quản lý
-        const res = await authFetch(`${API_BASE_URL}/project/project-manager`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) {
-          const result = await res.json();
-          setHistoryData(Array.isArray(result.data) ? result.data : []);
-        } else {
-          setHistoryData([]);
-          message.error('Failed to fetch managed projects');
-        }
+      const res = await authFetch(`${API_BASE_URL}/employee/project-history/${employeeId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const result = await res.json();
+        setHistoryData(Array.isArray(result.data) ? result.data : []);
       } else {
-        // Nhân viên thường: lấy lịch sử assignment
-        const res = await authFetch(`${API_BASE_URL}/employee/project-history/${employeeId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) {
-          const result = await res.json();
-          setHistoryData(Array.isArray(result.data) ? result.data : []);
-        } else {
-          setHistoryData([]);
-          message.error('Failed to fetch assignment history');
-        }
+        setHistoryData([]);
+        toast.error('Failed to fetch assignment history');
       }
     } catch {
       setHistoryData([]);
-      message.error('Failed to fetch assignment history');
+      toast.error('Failed to fetch assignment history');
     }
     setHistoryLoading(false);
   };
@@ -251,14 +237,14 @@ const EmployeeList: React.FC = () => {
                   body: JSON.stringify({ employeeId: record.employeeId, role: newRole }),
                 });
                 if (res.ok) {
-                  message.success('Role updated successfully');
+                  toast.success('Role updated successfully');
                   setEditingRoleId(null);
                   fetchEmployees(pagination.current, pagination.pageSize, filterRole);
                 } else {
-                  message.error('Update role failed');
+                  toast.error('Update role failed');
                 }
               } catch {
-                message.error('Update role failed');
+                toast.error('Update role failed');
               }
               setRoleLoadingId(null);
             }}
@@ -285,11 +271,13 @@ const EmployeeList: React.FC = () => {
       key: 'action',
       render: (_: any, record: EmployeeDto) => (
         <Space>
-          <Button icon={<EditOutlined />} onClick={() => showEditModal(record)} />
-          <Button icon={<HistoryOutlined />} onClick={() => handleShowHistory(record.employeeId, record.role)} />
+          {user?.role === 'ADMIN' && (
+            <Button icon={<EditOutlined />} onClick={() => showEditModal(record)} />
+          )}
+          <Button icon={<HistoryOutlined />} onClick={() => handleShowHistory(record.employeeId)} />
           {(
-            user?.role === 'ADMIN' ||
-            (user && user.employeeId !== record.employeeId)
+            user?.role === 'ADMIN' && record.role !== 'ADMIN' ||
+            (user && user.employeeId !== record.employeeId && record.role !== 'ADMIN')
           ) && (
             <Popconfirm title="Are you sure to delete?" onConfirm={() => handleDelete(record.employeeId)}>
               <Button icon={<DeleteOutlined />} danger />
@@ -365,79 +353,60 @@ const EmployeeList: React.FC = () => {
           <Form.Item name="dob" label="Date of Birth">
             <DatePicker style={{ width: '100%' }} format="DD-MM-YYYY" />
           </Form.Item>
+          {!editingEmployee && (
+            <Form.Item name="role" label="Role" rules={[{ required: true, message: 'Please select role!' }]}> 
+              <Select placeholder="Select role">
+                {roleList.map(role => (
+                  <Select.Option key={role} value={role}>{role}</Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+          )}
         </Form>
       </Modal>
       {/* Assignment History Table */}
       {historyEmployeeId && (
         <div style={{ marginTop: 32 }}>
-          <h3>{data.find(e => e.employeeId === historyEmployeeId)?.role === 'PM' ? 'Managed Projects' : 'Assignment History'} for Employee ID: {historyEmployeeId}</h3>
+          <h3>Assignment History for Employee ID: {historyEmployeeId}</h3>
           {historyLoading ? (
             <div>Loading...</div>
           ) : historyData.length === 0 ? (
             <div>No data found.</div>
           ) : (
-            data.find(e => e.employeeId === historyEmployeeId)?.role === 'PM' ? (
-              <Table
-                rowKey={record => record.projectId}
-                columns={[
-                  { title: 'Project ID', dataIndex: 'projectId', key: 'projectId', width: 80 },
-                  { title: 'Project Code', dataIndex: 'projectCode', key: 'projectCode', width: 120 },
-                  { title: 'Project Name', dataIndex: 'projectName', key: 'projectName', width: 180 },
-                  { title: 'PM Email', dataIndex: 'pmEmail', key: 'pmEmail', width: 180 },
-                  { title: 'Start Date', dataIndex: 'startDate', key: 'startDate', width: 120, render: (date: string) => date || '-' },
-                  { title: 'End Date', dataIndex: 'endDate', key: 'endDate', width: 120, render: (date: string) => date || '-' },
-                  { title: 'Description', dataIndex: 'description', key: 'description', width: 200 },
-                  { title: 'Created At', dataIndex: 'createdAt', key: 'createdAt', width: 150, render: (date: string) => date ? dayjs(date).format('DD-MM-YYYY') : '-' },
-                  { title: 'Updated At', dataIndex: 'updatedAt', key: 'updatedAt', width: 150, render: (date: string) => date ? dayjs(date).format('DD-MM-YYYY') : '-' },
-                ]}
-                dataSource={historyData}
-                pagination={false}
-                bordered
-                style={{ marginTop: 16 }}
-              />
-            ) : (
-              // Sort assignment history theo projectName và period startDate giảm dần
-              <Table
-                rowKey={record => record.projectId}
-                columns={[
-                  { title: 'Project Code', dataIndex: 'projectCode', key: 'projectCode', width: 120 },
-                  { title: 'Project Name', dataIndex: 'projectName', key: 'projectName', width: 180 },
-                  { title: 'Project Duration', key: 'projectDuration', width: 200, render: (_: any, record: any) => `${record.projectStartDate} - ${record.projectEndDate ? record.projectEndDate : '-'}` },
-                  { title: 'Participation Period', key: 'participationPeriod', width: 220, render: (_: any, record: any) => (
-                    record.participations && record.participations.length > 0 ? (
-                      <div>
-                        {[...record.participations]
-                          .sort((a, b) => dayjs(b.startDate, 'DD-MM-YYYY').valueOf() - dayjs(a.startDate, 'DD-MM-YYYY').valueOf())
-                          .map((p: ParticipationPeriodDto, i: number) => (
-                            <div key={i}>{p.startDate} - {p.endDate}</div>
-                          ))}
-                      </div>
-                    ) : <span>No participation periods</span>
-                  ) },
-                  { title: 'Workload (%)', key: 'workload', width: 120, render: (_: any, record: any) => (
-                    record.participations && record.participations.length > 0 ? (
-                      <div>
-                        {[...record.participations]
-                          .sort((a, b) => dayjs(b.startDate, 'DD-MM-YYYY').valueOf() - dayjs(a.startDate, 'DD-MM-YYYY').valueOf())
-                          .map((p: ParticipationPeriodDto, i: number) => (
-                            <div key={i}>{p.workloadPercent}</div>
-                          ))}
-                      </div>
-                    ) : <span>-</span>
-                  ) },
-                ]}
-                dataSource={
-                  [...historyData].sort((a, b) => {
-                    if (a.projectName < b.projectName) return -1;
-                    if (a.projectName > b.projectName) return 1;
-                    return 0;
-                  })
-                }
-                pagination={false}
-                bordered
-                style={{ marginTop: 16 }}
-              />
-            )
+            <Table
+              rowKey={record => record.projectId}
+              columns={[
+                { title: 'Project Code', dataIndex: 'projectCode', key: 'projectCode', width: 120 },
+                { title: 'Project Name', dataIndex: 'projectName', key: 'projectName', width: 180 },
+                { title: 'Project Duration', key: 'projectDuration', width: 200, render: (_: any, record: any) => `${record.projectStartDate} - ${record.projectEndDate ? record.projectEndDate : 'Ongoing'}` },
+                { title: 'Participation Period', key: 'participationPeriod', width: 220, render: (_: any, record: any) => (
+                  record.participations && record.participations.length > 0 ? (
+                    <div>
+                      {[...record.participations]
+                        .sort((a, b) => dayjs(b.startDate, 'DD-MM-YYYY').valueOf() - dayjs(a.startDate, 'DD-MM-YYYY').valueOf())
+                        .map((p: ParticipationPeriodDto, i: number) => (
+                          <div key={i}>{p.startDate} - {p.endDate ? p.endDate : 'Ongoing'}</div>
+                        ))}
+                    </div>
+                  ) : <span>No participation periods</span>
+                ) },
+                { title: 'Workload (%)', key: 'workload', width: 120, render: (_: any, record: any) => (
+                  record.participations && record.participations.length > 0 ? (
+                    <div>
+                      {[...record.participations]
+                        .sort((a, b) => dayjs(b.startDate, 'DD-MM-YYYY').valueOf() - dayjs(a.startDate, 'DD-MM-YYYY').valueOf())
+                        .map((p: ParticipationPeriodDto, i: number) => (
+                          <div key={i}>{p.workloadPercent}</div>
+                        ))}
+                    </div>
+                  ) : <span>-</span>
+                ) },
+              ]}
+              dataSource={historyData}
+              pagination={false}
+              bordered
+              style={{ marginTop: 16 }}
+            />
           )}
         </div>
       )}
